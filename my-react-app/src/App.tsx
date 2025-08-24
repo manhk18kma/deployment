@@ -1,102 +1,123 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+
+type User = {
+  id: number;
+  name: string;
+};
+
+const API_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:8080/api/test-users";
 
 function App() {
-  const [todos, setTodos] = useState<string[]>([]);
-  const [input, setInput] = useState("");
+  const [users, setUsers] = useState<User[]>([]);
+  const [name, setName] = useState("");
+  const [editId, setEditId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
 
-  const handleAdd = () => {
-    if (input.trim()) {
-      setTodos([...todos, input.trim()]);
-      setInput("");
-    }
+  // Fetch all users
+  const fetchUsers = async () => {
+    const res = await fetch(API_URL);
+    setUsers(await res.json());
   };
 
-  const handleDelete = (index: number) => {
-    setTodos(todos.filter((_, i) => i !== index));
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Add user
+  const handleAdd = async () => {
+    if (!name.trim()) return;
+    await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    setName("");
+    fetchUsers();
   };
 
-  // Style object
-  const styles = {
-    app: {
-      maxWidth: 400,
-      margin: "40px auto",
-      padding: "24px 20px",
-      background: "#fff",
-      borderRadius: 12,
-      boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
-      fontFamily: "'Segoe UI', Arial, sans-serif",
-    } as React.CSSProperties,
-    h2: {
-      textAlign: "center" as const,
-      color: "#1976d2",
-      marginBottom: 20,
-    },
-    input: {
-      width: "70%",
-      padding: "8px 10px",
-      border: "1px solid #bdbdbd",
-      borderRadius: 6,
-      fontSize: 16,
-      marginRight: 8,
-      outline: "none",
-      transition: "border 0.2s",
-    },
-    button: {
-      padding: "8px 14px",
-      background: "#1976d2",
-      color: "#fff",
-      border: "none",
-      borderRadius: 6,
-      fontSize: 15,
-      cursor: "pointer",
-      transition: "background 0.2s",
-    },
-    ul: {
-      listStyle: "none",
-      padding: 0,
-      marginTop: 18,
-    },
-    li: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      background: "#f5f5f5",
-      marginBottom: 10,
-      padding: "8px 12px",
-      borderRadius: 6,
-      fontSize: 16,
-    },
-    delBtn: {
-      background: "#e53935",
-      color: "#fff",
-      padding: "5px 10px",
-      borderRadius: 4,
-      fontSize: 13,
-      marginLeft: 10,
-      border: "none",
-      cursor: "pointer",
-    },
+  // Delete user
+  const handleDelete = async (id: number) => {
+    await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    fetchUsers();
+  };
+
+  // Start editing
+  const handleEdit = (user: User) => {
+    setEditId(user.id);
+    setEditName(user.name);
+  };
+
+  // Save edit
+  const handleSave = async (id: number) => {
+    await fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editName }),
+    });
+    setEditId(null);
+    setEditName("");
+    fetchUsers();
   };
 
   return (
-    <div style={styles.app}>
-      <h2 style={styles.h2}>Todo List</h2>
-      <input
-        style={styles.input}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Add todo..."
-      />
-      <button style={styles.button} onClick={handleAdd}>
-        Add
-      </button>
-      <ul style={styles.ul}>
-        {todos.map((todo, idx) => (
-          <li style={styles.li} key={idx}>
-            {todo}
-            <button style={styles.delBtn} onClick={() => handleDelete(idx)}>
-              Delete
-            </button>
+    <div
+      style={{
+        maxWidth: 400,
+        margin: "40px auto",
+        padding: 24,
+        background: "#fff",
+        borderRadius: 12,
+      }}
+    >
+      <h2>Test User CRUD</h2>
+      <div style={{ display: "flex", marginBottom: 16 }}>
+        <input
+          style={{ flex: 1, padding: 8, marginRight: 8 }}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter user name"
+        />
+        <button onClick={handleAdd}>Add</button>
+      </div>
+      <ul style={{ listStyle: "none", padding: 0 }}>
+        {users.map((user) => (
+          <li
+            key={user.id}
+            style={{ marginBottom: 10, display: "flex", alignItems: "center" }}
+          >
+            {editId === user.id ? (
+              <>
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  style={{ flex: 1, marginRight: 8 }}
+                />
+                <button onClick={() => handleSave(user.id)}>Save</button>
+                <button
+                  onClick={() => setEditId(null)}
+                  style={{ marginLeft: 4 }}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <span style={{ flex: 1 }}>{user.name}</span>
+                <button
+                  onClick={() => handleEdit(user)}
+                  style={{ marginLeft: 8 }}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(user.id)}
+                  style={{ marginLeft: 4, color: "red" }}
+                >
+                  Delete
+                </button>
+              </>
+            )}
           </li>
         ))}
       </ul>
