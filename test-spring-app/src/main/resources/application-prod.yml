@@ -3,7 +3,7 @@ spring:
     name: test-spring-app
 
   datasource:
-    url: jdbc:postgresql://db:5432/kma_bookingapp
+    url: jdbc:postgresql://localhost:5433/kma_bookingapp
     username: root
     password: 123456A@
     driver-class-name: org.postgresql.Driver
@@ -19,5 +19,4 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-
-urlClient: http://185.230.138.238:3000
+urlClient: https://www.kmastay.pro.vn,https://kmastay.pro.vn
